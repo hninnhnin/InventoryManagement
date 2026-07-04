@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>အရောင်းနှင့် ကြွေးမြီစီမံခန့်ခွဲမှု</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light p-4">
+
+<div class="container-fluid bg-white p-4 rounded shadow-sm">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div class="d-flex align-items-center gap-2">
+            <a href="index.html" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center p-2 me-2 shadow-sm" title="ပင်မစာမျက်နှာသို့ ပြန်ရန်" style="width: 36px; height: 36px; transition: all 0.2s;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" stroke="currentColor" stroke-width="0.5"/>
+                </svg>
+            </a>
+
+            <div>
+                <h2 class="fw-bold text-dark mb-0">အရောင်းနှင့် ကြွေးမြီစီမံခန့်ခွဲမှု (Non-Cash Sales)</h2>
+                <p class="text-muted mb-0">လက်ငင်း (Cash) ရောင်းချမှုများမှလွဲ၍ ကျန်ရှိသော အကြွေးနှင့် အရစ်ကျဘောက်ချာများ စာရင်း</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div id="unpaidCardElement" onclick="filterSales('UNPAID')" style="cursor: pointer; transition: all 0.2s;" class="card border-start border-danger border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted fw-bold">စုစုပေါင်း မဆပ်ရသေးသည့် ဘောက်ချာ</h6>
+                    <h2 id="unpaidCardCount" class="text-danger fw-bold mb-0">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div id="paidCardElement" onclick="filterSales('PAID')" style="cursor: pointer; transition: all 0.2s;" class="card border-start border-success border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted fw-bold">စုစုပေါင်း ကြွေးကျေပြီးသည့် ဘောက်ချာ</h6>
+                    <h2 id="paidCardCount" class="text-success fw-bold mb-0">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold text-secondary mb-0"><i class="bi bi-table"></i> အရောင်းစာရင်းဇယား</h4>
+        <button onclick="loadSalesData()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise"></i> Refresh Data</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle border">
+            <thead class="table-light">
+            <tr>
+                <th>Invoice No</th>
+                <th>ဝယ်သူအမည်</th>
+                <th>အမျိုးအစား</th>
+                <th>ရက်စွဲ</th>
+                <th>စုစုပေါင်း ကျသင့်ငွေ</th>
+                <th>လက်ကျန် ကြွေးကျန်</th>
+                <th>အခြေအနေ</th>
+            </tr>
+            </thead>
+            <tbody id="salesTableBody">
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div> ဒေတာများကို ဖတ်ယူနေပါသည်...
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let allSalesData = [];
+    let currentFilter = 'ALL';
+
+    // ၁။ API မှ ဒေတာဆွဲထုတ်ခြင်း
+    function loadSalesData() {
+        const tableBody = document.getElementById('salesTableBody');
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary"></div> ဒေတာများကို ဖတ်ယူနေပါသည်...</td></tr>`;
+
+        fetch('/api/sales/list')
+            .then(response => response.json())
+            .then(data => {
+                allSalesData = data;
+
+                const unpaidCount = data.filter(item => item.status === 'UNPAID').length;
+                const paidCount = data.filter(item => item.status === 'PAID').length;
+
+                document.getElementById('unpaidCardCount').innerText = unpaidCount;
+                document.getElementById('paidCardCount').innerText = paidCount;
+
+                renderSalesTable();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle-fill"></i> ဒေတာများ ဆွဲထုတ်ရာတွင် အမှားအယွင်းရှိနေပါသည်...</td></tr>`;
+            });
+    }
+
+    // ၂။ Filter အလိုက် ဇယားကွက် ထုတ်ပြခြင်း
+    function renderSalesTable() {
+        const tableBody = document.getElementById('salesTableBody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+
+        let filteredData = allSalesData;
+        if (currentFilter === 'UNPAID') {
+            filteredData = allSalesData.filter(item => item.status === 'UNPAID');
+        } else if (currentFilter === 'PAID') {
+            filteredData = allSalesData.filter(item => item.status === 'PAID');
+        }
+
+        if (filteredData.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">သတ်မှတ်ထားသော အခြေအနေရှိ မှတ်တမ်းမရှိပါ</td></tr>`;
+            return;
+        }
+
+        filteredData.forEach(item => {
+            const statusBadge = item.status === 'PAID'
+                ? `<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> PAID</span>`
+                : `<span class="badge bg-danger"><i class="bi bi-exclamation-circle-fill"></i> UNPAID</span>`;
+
+            const paymentBadge = item.paymentMethod === 'INSTALLMENT'
+                ? `<span class="badge bg-info text-dark">INSTALLMENT</span>`
+                : `<span class="badge bg-secondary">CREDIT</span>`;
+
+            let formattedDate = 'N/A';
+            if (item.saleDate) {
+                const dateObj = new Date(item.saleDate);
+                formattedDate = dateObj.toLocaleDateString();
+            }
+
+            const row = `
+                <tr>
+                    <td><a href="#" class="fw-bold text-decoration-none">#${item.invoiceNumber}</a></td>
+                    <td>${item.customerName || 'အမည်မသိ'}</td>
+                    <td>${paymentBadge}</td>
+                    <td>${formattedDate}</td>
+                    <td>${Number(item.totalAmount).toLocaleString()} MMK</td>
+                    <td class="fw-bold">${Number(item.remainingBalance).toLocaleString()} MMK</td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', row);
+        });
+    }
+
+    // ၃။ Filter Toggle Function
+    function filterSales(status) {
+        if (currentFilter === status) {
+            currentFilter = 'ALL';
+        } else {
+            currentFilter = status;
+        }
+
+        highlightActiveCard();
+        renderSalesTable();
+    }
+
+    // ၄။ Active Card Border Highlight လုပ်ခြင်း
+    function highlightActiveCard() {
+        const unpaidElement = document.getElementById('unpaidCardElement');
+        const paidElement = document.getElementById('paidCardElement');
+
+        unpaidElement.classList.remove('shadow', 'border-dark');
+        paidElement.classList.remove('shadow', 'border-dark');
+        unpaidElement.style.transform = "scale(1)";
+        paidElement.style.transform = "scale(1)";
+
+        if (currentFilter === 'UNPAID') {
+            unpaidElement.classList.add('shadow', 'border-dark');
+            unpaidElement.style.transform = "scale(1.02)";
+        } else if (currentFilter === 'PAID') {
+            paidElement.classList.add('shadow', 'border-dark');
+            paidElement.style.transform = "scale(1.02)";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadSalesData);
+</script>
+
+</body>
+</html>

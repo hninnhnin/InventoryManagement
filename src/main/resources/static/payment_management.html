@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIFO Debt Repayment Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .premium-card { border: none; border-radius: 16px; box-shadow: 0 4px 25px rgba(0,0,0,0.04); background: #ffffff; }
+        .gradient-header { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; border-radius: 16px 16px 0 0; }
+        .table th { font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark m-0">💳 အလိုအလျောက် အကြွေးနှိမ်စနစ် (FIFO)</h3>
+            <small class="text-muted">ဝယ်သူပေးလာသောငွေအား ရက်စွဲအဟောင်းဆုံး ဘောက်ချာမှစ၍ အလိုအလျောက် ဖြတ်တောက်ခြင်း</small>
+        </div>
+        <a href="index.html" class="btn btn-outline-dark fw-bold px-4 rounded-pill">🛒 အရောင်းကောင်တာသို့</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card premium-card shadow-sm h-100">
+                <div class="p-4 gradient-header">
+                    <h5 class="fw-bold m-0">💰 Quick Repayment Form</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form id="paymentForm" onsubmit="submitFifoPayment(event)">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary">👥 ဝယ်သူအမည်</label>
+                            <select id="payCustomerDropdown" class="form-select form-select-lg rounded-3 border-2" onchange="onCustomerChange()" required>
+                                <option value="">-- ဝယ်သူရွေးချယ်ရန် --</option>
+                            </select>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 border text-center mb-4">
+                            <span class="text-muted fw-semibold d-block mb-1">စုစုပေါင်း အကြွေးကျန်ရှိမှု:</span>
+                            <span id="totalDebtDisplay" class="fw-bold fs-3 text-danger">0 MMK</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary">💵 ယခုလာရောက်ပေးချေသည့် ပမာဏ</label>
+                            <div class="input-group input-group-lg">
+                                <input type="number" id="payAmount" class="form-control rounded-start-3 fw-bold text-primary" placeholder="0" min="1" required>
+                                <span class="input-group-text bg-white fw-bold text-muted">MMK</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary">🏪 Ngwe Pay Chay Mhu Pon San</label>
+                            <select id="payMethod" class="form-select rounded-3">
+                                <option value="CASH">💵 CASH (လက်ငင်းငွေသား)</option>
+                                <option value="KPAY">📱 KBZ Pay</option>
+                                <option value="WAVEPAY">🌊 Wave Money</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary">📝 မှတ်ချက် (Note)</label>
+                            <textarea id="payNote" class="form-control rounded-3" rows="2" placeholder="အကြွေးဟောင်း လာရောက်ရှင်းလင်းခြင်း..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold rounded-3 shadow-sm">
+                            ✅ အကြွေးနှိမ်စနစ် အတည်ပြုမည်
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card premium-card p-4 shadow-sm h-100">
+                <h5 class="fw-bold text-dark mb-3">📋 မဆပ်ရသေးသော အကြွေးဘောက်ချာများစာရင်း</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle border">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Invoice No</th>
+                            <th>ရက်စွဲ</th>
+                            <th class="text-end">အကြွေးကျန် (Remaining)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="invoiceTableBody">
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-5">ဝယ်သူရွေးချယ်ပြီးပါက ၎င်း၏ မဆပ်ရသေးသော ဘောက်ချာများ ဤနေရာတွင် ပေါ်လာပါမည်။</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let customerList = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchCustomers();
+    });
+
+    // ၁။ ဝယ်သူစာရင်း ဆွဲထုတ်ခြင်း
+    async function fetchCustomers() {
+        try {
+            const res = await fetch('/api/customers');
+            customerList = await res.json();
+            const dropdown = document.getElementById("payCustomerDropdown");
+            dropdown.innerHTML = '<option value="">-- ဝယ်သူရွေးချယ်ရန် --</option>';
+
+            customerList.forEach(c => {
+                let debtText = c.totalDebt ? ` (အကြွေးကျန်: ${c.totalDebt.toLocaleString()} MMK)` : ' (အကြွေးမရှိပါ)';
+                dropdown.innerHTML += `<option value="${c.id}">${c.name}${debtText}</option>`;
+            });
+        } catch (e) { console.error("Error fetching customers:", e); }
+    }
+
+    // ၂။ ဝယ်သူရွေးလိုက်လျှင် ၎င်း၏ စုစုပေါင်းအကြွေးကျန်နှင့် ဘောက်ချာစာရင်းကို တစ်ခါတည်းပြခြင်း
+    async function onCustomerChange() {
+        const customerId = document.getElementById("payCustomerDropdown").value;
+        const debtDisplay = document.getElementById("totalDebtDisplay");
+        const tbody = document.getElementById("invoiceTableBody");
+
+        if (!customerId) {
+            debtDisplay.innerText = "0 MMK";
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-5">ဝယ်သူရွေးချယ်ပြီးပါက ၎င်း၏ မဆပ်ရသေးသော ဘောက်ချာများ ဤနေရာတွင် ပေါ်လာပါမည်။</td></tr>`;
+            return;
+        }
+
+        // ရွေးချယ်ထားသော ဝယ်သူ၏ စုစုပေါင်းအကြွေးကို ရှာပြခြင်း
+        const selectedCust = customerList.find(c => c.id === parseInt(customerId));
+        let totalDebt = selectedCust && selectedCust.totalDebt ? selectedCust.totalDebt : 0;
+        debtDisplay.innerText = totalDebt.toLocaleString() + " MMK";
+
+        try {
+            // 💡 URL ကို PaymentController အောက်က လမ်းကြောင်းအသစ်သို့ ပြောင်းလဲခေါ်ယူခြင်း
+            const res = await fetch(`http://localhost:8080/api/payments/unpaid-credits?customerId=${customerId}`);
+            const credits = await res.json();
+
+            if (!credits || credits.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-success py-5">🎉 ဤဝယ်သူတွင် အကြွေးကျန်သော ဘောက်ချာ လုံးဝမရှိပါ။</td></tr>`;
+                return;
+            }
+
+            let rows = "";
+            credits.forEach(c => {
+                // CreditSale -> Sale -> invoiceNumber လမ်းကြောင်းအတိုင်း ပြန်ပြောင်းခြင်း
+                let invoiceNo = (c.sale && c.sale.invoiceNumber) ? c.sale.invoiceNumber : "N/A";
+                let saleDate = (c.sale && c.sale.saleDate) ? new Date(c.sale.saleDate).toLocaleDateString() : "-";
+                let remaining = c.remainingAmount ? c.remainingAmount : 0;
+
+                rows += `<tr>
+            <td><strong class="text-primary">${invoiceNo}</strong></td>
+            <td><small class="text-muted">${saleDate}</small></td>
+            <td class="text-end fw-bold text-danger">${remaining.toLocaleString()} MMK</td>
+        </tr>`;
+            });
+            tbody.innerHTML = rows;
+        } catch (e) {
+            console.error("Error fetching credit sales:", e);
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">ဒေတာဆွဲယူရာတွင် အမှားအယွင်းရှိနေပါသည်။</td></tr>`;
+        }
+    }
+
+    // ၃။ FIFO Repayment Submit ပြုလုပ်ခြင်း
+    async function submitFifoPayment(event) {
+        event.preventDefault();
+
+        const customerId = document.getElementById("payCustomerDropdown").value;
+        const amount = document.getElementById("payAmount").value;
+        const paymentMethod = document.getElementById("payMethod").value;
+        const note = document.getElementById("payNote").value;
+
+        const url = `http://localhost:8080/api/payments/repay-fifo?customerId=${customerId}&amount=${amount}&paymentMethod=${paymentMethod}&note=${encodeURIComponent(note)}`;
+
+        try {
+            const res = await fetch(url, { method: 'POST' });
+            if (res.ok) {
+                alert("🎉 အဟောင်းဆုံးဘောက်ချာများမှ စတင်၍ အကြွေးနှိမ်ခြင်း အောင်မြင်ပါသည်!");
+                document.getElementById("paymentForm").reset();
+
+                // ဒေတာများအားလုံးကို အချိန်နှင့်တပြေးညီ (Live Refresh) ဖြစ်အောင် ပြန်ခေါ်ပေးခြင်း
+                await fetchCustomers();
+
+                // Dropdown ရွေးချယ်မှုကို ပြန်လည်သတ်မှတ်ပြီး ဇယားကို ကနဦးအခြေအနေသို့ ပြောင်းလဲခြင်း
+                document.getElementById("payCustomerDropdown").value = customerId;
+                await onCustomerChange();
+            } else {
+                alert("❌ စာရင်းသွင်း၍မရပါ: " + await res.text());
+            }
+        } catch (error) { alert("🚨 Network Error: " + error.message); }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ဒေတာ စီမံခန့်ခွဲမှုစနစ် (Data Management)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+<nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 text-white p-2 rounded-lg">
+            <i class="fas fa-boxes-stacked text-xl"></i>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold tracking-wide text-gray-900">ဒေတာ စီမံခန့်ခွဲမှုစနစ်</h1>
+            <p class="text-xs text-gray-500">Products & Customers CRUD Manager</p>
+        </div>
+    </div>
+    <a href="index.html" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center space-x-2">
+        <i class="fas fa-arrow-left"></i> <span>အရောင်းကောင်တာသို့ ပြန်သွားမည်</span>
+    </a>
+</nav>
+
+<main class="max-w-7xl mx-auto p-6">
+
+    <div class="flex border-b border-gray-200 mb-6 bg-white p-2 rounded-xl shadow-sm">
+        <button id="tab-products-btn" onclick="switchTab('products')" class="flex-1 py-3 text-center font-bold text-sm rounded-lg transition flex justify-center items-center space-x-2 bg-blue-50 text-blue-600">
+            <i class="fas fa-box"></i> <span>ကုန်ပစ္စည်းများ စီမံရန် (Products)</span>
+        </button>
+        <button id="tab-customers-btn" onclick="switchTab('customers')" class="flex-1 py-3 text-center font-bold text-sm rounded-lg transition flex justify-center items-center space-x-2 text-gray-500 hover:bg-gray-50">
+            <i class="fas fa-users"></i> <span>ဝယ်သူများ စီမံရန် (Customers)</span>
+        </button>
+    </div>
+
+    <section id="products-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
+            <h3 id="product-form-title" class="text-lg font-bold mb-4 flex items-center text-gray-800 border-b pb-2">
+                <i class="fas fa-plus-circle text-blue-500 mr-2"></i> ကုန်ပစ္စည်းအသစ် ထည့်သွင်းခြင်း
+            </h3>
+            <form id="product-form" onsubmit="handleProductSubmit(event)" class="space-y-4">
+                <input type="hidden" id="product-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ကုန်ပစ္စည်းအမည်</label>
+                    <input type="text" id="product-name" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ဘားကုဒ် (Barcode)</label>
+                    <input type="text" id="product-barcode" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ရင်းဈေး (Cost)</label>
+                        <input type="number" step="0.01" id="product-cost" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ရောင်းဈေး (Selling)</label>
+                        <input type="number" step="0.01" id="product-selling" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">လက်ကျန်စတော့ (Stock Qty)</label>
+                    <input type="number" id="product-stock" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold transition text-sm shadow-sm">
+                        <i class="fas fa-save mr-1"></i> သိမ်းဆည်းမည်
+                    </button>
+                    <button type="button" onclick="resetProductForm()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-xl text-sm transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-gray-100 gap-3">
+                <h3 class="text-lg font-bold text-gray-800">လက်ရှိကုန်ပစ္စည်း စာရင်း</h3>
+                <div class="relative w-full sm:w-64">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                    <input type="text" placeholder="ရှာဖွေရန်..." class="w-full pl-9 pr-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                    <tr class="bg-gray-50 text-gray-600 font-semibold uppercase text-xs border-b">
+                        <th class="p-3">အမည်</th>
+                        <th class="p-3">ဘားကုဒ်</th>
+                        <th class="p-3 text-right">ရင်းဈေး</th>
+                        <th class="p-3 text-right">ရောင်းဈေး</th>
+                        <th class="p-3 text-center">စတော့ကျန်</th>
+                        <th class="p-3 text-center">လုပ်ဆောင်ချက်</th>
+                    </tr>
+                    </thead>
+                    <tbody id="products-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="customers-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
+            <h3 id="customer-form-title" class="text-lg font-bold mb-4 flex items-center text-gray-800 border-b pb-2">
+                <i class="fas fa-user-plus text-emerald-500 mr-2"></i> ဝယ်သူအသစ် စာရင်းသွင်းခြင်း
+            </h3>
+            <form id="customer-form" onsubmit="handleCustomerSubmit(event)" class="space-y-4">
+                <input type="hidden" id="customer-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ဝယ်သူအမည်</label>
+                    <input type="text" id="customer-name" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ဖုန်းနံပါတ်</label>
+                    <input type="text" id="customer-phone" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ဝယ်သူအမျိုးအစား</label>
+                    <select id="customer-type" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white transition text-sm">
+                        <option value="REGULAR">REGULAR (လက်ငင်းဝယ်သူ)</option>
+                        <option value="CREDIT">CREDIT (အကြွေးဝယ်သူ)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ရရန်ကျန်အကြွေး (Total Debt)</label>
+                    <input type="number" step="0.01" id="customer-debt" value="0" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition text-sm">
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-semibold transition text-sm shadow-sm">
+                        <i class="fas fa-save mr-1"></i> သိမ်းဆည်းမည်
+                    </button>
+                    <button type="button" onclick="resetCustomerForm()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-xl text-sm transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-gray-100 gap-3">
+                <h3 class="text-lg font-bold text-gray-800">ဝယ်သူများ စာရင်း</h3>
+                <div class="relative w-full sm:w-64">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                    <input type="text" placeholder="ရှာဖွေရန်..." class="w-full pl-9 pr-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                    <tr class="bg-gray-50 text-gray-600 font-semibold uppercase text-xs border-b">
+                        <th class="p-3">အမည်</th>
+                        <th class="p-3">ဖုန်းနံပါတ်</th>
+                        <th class="p-3 text-center">အမျိုးအစား</th>
+                        <th class="p-3 text-right">ကျန်ရှိအကြွေး</th>
+                        <th class="p-3 text-center">လုပ်ဆောင်ချက်</th>
+                    </tr>
+                    </thead>
+                    <tbody id="customers-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
+<script>
+const API_PRODUCTS = 'http://localhost:8080/api/products';
+const API_CUSTOMERS = 'http://localhost:8080/api/customers';
+
+// Page Start Initialization
+document.addEventListener('DOMContentLoaded', () => {
+loadProducts();
+loadCustomers();
+});
+
+// Tab Switch Controller
+function switchTab(tab) {
+const pSec = document.getElementById('products-section');
+const cSec = document.getElementById('customers-section');
+const pBtn = document.getElementById('tab-products-btn');
+const cBtn = document.getElementById('tab-customers-btn');
+
+if (tab === 'products') {
+pSec.classList.remove('hidden');
+cSec.classList.add('hidden');
+pBtn.className = "flex-1 py-3 text-center font-bold text-sm rounded-lg transition flex justify-center items-center space-x-2 bg-blue-50 text-blue-600";
+cBtn.className = "flex-1 py-3 text-center font-bold text-sm rounded-lg transition flex justify-center items-center space-x-2 text-gray-500 hover:bg-gray-50";
+} else {
+pSec.classList.add('hidden');
+cSec.classList.remove('hidden');
+pBtn.className = "flex-1 py-3 text-center font-bold text-sm rounded-lg transition flex justify-center items-center space-x-2 text-gray-500 hover:bg-gray-50";
+cBtn.className = "flex-1 py-3 text-center font-bold text-sm rounded-lg transition flex justify-center items-center space-x-2 bg-emerald-50 text-emerald-600";
+}
+}
+
+// ================= PRODUCT OPERATIONS =================
+async function loadProducts() {
+try {
+const res = await fetch(API_PRODUCTS);
+const products = await res.json();
+const tbody = document.getElementById('products-table-body');
+tbody.innerHTML = '';
+
+products.forEach(p => {
+// 💡 HTML5 data-attribute သုံးပြီး Object လုံခြုံစွာ ပို့ဆောင်ခြင်း
+tbody.innerHTML += `
+<tr class="border-b hover:bg-gray-50 transition">
+    <td class="p-3 font-medium text-gray-900">${p.name}</td>
+    <td class="p-3 text-gray-500 font-mono text-xs">${p.barcode}</td>
+    <td class="p-3 text-right font-mono">${p.costPrice.toLocaleString()} MMK</td>
+    <td class="p-3 text-right font-mono font-semibold text-blue-600">${p.sellingPrice.toLocaleString()} MMK</td>
+    <td class="p-3 text-center font-mono">${p.stockQty}</td>
+    <td class="p-3 text-center space-x-1">
+        <button data-product='${JSON.stringify(p)}' onclick="editProduct(this)" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition text-xs"><i class="fas fa-edit"></i> ပြင်ရန်</button>
+        <button onclick="deleteProduct(${p.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition text-xs"><i class="fas fa-trash"></i> ဖျက်ရန်</button>
+    </td>
+</tr>
+`;
+});
+} catch (err) { console.error('Error fetching products:', err); }
+}
+
+async function handleProductSubmit(e) {
+e.preventDefault();
+const id = document.getElementById('product-id').value;
+const payload = {
+name: document.getElementById('product-name').value,
+barcode: document.getElementById('product-barcode').value,
+costPrice: parseFloat(document.getElementById('product-cost').value),
+sellingPrice: parseFloat(document.getElementById('product-selling').value),
+stockQty: parseInt(document.getElementById('product-stock').value)
+};
+
+const url = id ? `${API_PRODUCTS}/${id}` : API_PRODUCTS;
+const method = id ? 'PUT' : 'POST';
+
+try {
+const res = await fetch(url, {
+method: method,
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+if (res.ok) {
+resetProductForm();
+loadProducts();
+alert('ကုန်ပစ္စည်း အချက်အလက် သိမ်းဆည်းပြီးပါပြီ။');
+}
+} catch (err) { alert('အချက်အလက် သိမ်းဆည်းရာတွင် အမှားတက်ခဲ့ပါသည်။'); }
+}
+
+// 💡 HTML Button element ဆီကနေ data attribute ပြန်ထုတ်ယူသည့်ပုံစံပြောင်းလဲခြင်း
+function editProduct(btn) {
+const p = JSON.parse(btn.getAttribute('data-product'));
+document.getElementById('product-form-title').innerHTML = '<i class="fas fa-edit text-blue-500 mr-2"></i> ကုန်ပစ္စည်းအချက်အလက် ပြင်ဆင်ခြင်း';
+document.getElementById('product-id').value = p.id;
+document.getElementById('product-name').value = p.name;
+document.getElementById('product-barcode').value = p.barcode;
+document.getElementById('product-cost').value = p.costPrice;
+document.getElementById('product-selling').value = p.sellingPrice;
+document.getElementById('product-stock').value = p.stockQty;
+}
+
+async function deleteProduct(id) {
+if (!confirm('ဤကုန်ပစ္စည်းကို ဖျက်ပစ်ရန် သေချာပါသလား?')) return;
+try {
+await fetch(`${API_PRODUCTS}/${id}`, { method: 'DELETE' });
+loadProducts();
+} catch (err) { console.error(err); }
+}
+
+function resetProductForm() {
+document.getElementById('product-form-title').innerHTML = '<i class="fas fa-plus-circle text-blue-500 mr-2"></i> ကုန်ပစ္စည်းအသစ် ထည့်သွင်းခြင်း';
+document.getElementById('product-form').reset();
+document.getElementById('product-id').value = '';
+}
+
+// ================= CUSTOMER OPERATIONS =================
+async function loadCustomers() {
+try {
+const res = await fetch(API_CUSTOMERS);
+const customers = await res.json();
+const tbody = document.getElementById('customers-table-body');
+tbody.innerHTML = '';
+
+customers.forEach(c => {
+// 💡 ကာကွယ်ရေးအတွက် HTML5 data-attribute သုံး၍ လုံခြုံစွာထည့်သွင်းခြင်း
+tbody.innerHTML += `
+<tr class="border-b hover:bg-gray-50 transition">
+    <td class="p-3 font-medium text-gray-900">${c.name}</td>
+    <td class="p-3 text-gray-500">${c.phone || '-'}</td>
+    <td class="p-3 text-center">
+        <span class="px-2 py-0.5 rounded-full text-xs font-bold ${c.customerType === 'CREDIT' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'}">${c.customerType}</span>
+    </td>
+    <td class="p-3 text-right font-mono font-semibold ${c.totalDebt > 0 ? 'text-red-600' : 'text-gray-500'}">${(c.totalDebt || 0).toLocaleString()} MMK</td>
+    <td class="p-3 text-center space-x-1">
+        <button data-customer='${JSON.stringify(c)}' onclick='editCustomer(this)' class="text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded-md transition text-xs"><i class="fas fa-edit"></i> ပြင်ရန်</button>
+        <button onclick="deleteCustomer(${c.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition text-xs"><i class="fas fa-trash"></i> ဖျက်ရန်</button>
+    </td>
+</tr>
+`;
+});
+} catch (err) { console.error('Error fetching customers:', err); }
+}
+
+async function handleCustomerSubmit(e) {
+e.preventDefault();
+
+// 💡 hidden input ဆီကနေ customer id ကို စနစ်တကျ ရယူခြင်း
+const id = document.getElementById('customer-id').value;
+
+let debtInput = parseFloat(document.getElementById('customer-debt').value);
+let finalDebt = isNaN(debtInput) ? 0 : debtInput;
+
+const payload = {
+name: document.getElementById('customer-name').value,
+phone: document.getElementById('customer-phone').value,
+customerType: document.getElementById('customer-type').value,
+totalDebt: finalDebt
+}; // ✅ တွန့်ကွင်းကို စနစ်တကျ ပြန်ပိတ်လိုက်ပါပြီ
+
+const url = id ? `${API_CUSTOMERS}/${id}` : API_CUSTOMERS;
+const method = id ? 'PUT' : 'POST';
+
+try {
+const res = await fetch(url, {
+method: method,
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+if (res.ok) {
+resetCustomerForm();
+loadCustomers();
+alert('ဝယ်သူ အချက်အလက် သိမ်းဆည်းပြီးပါပြီ။');
+}
+} catch (err) { alert('အချက်အလက် သိမ်းဆည်းရာတွင် အမှားတက်ခဲ့ပါသည်။'); }
+}
+
+// 💡 HTML Button element မှတစ်ဆင့် data attribute ကို လုံခြုံစွာ ပြန်လည် Parse ဖတ်ယူခြင်း
+function editCustomer(btn) {
+const c = JSON.parse(btn.getAttribute('data-customer'));
+document.getElementById('customer-form-title').innerHTML = '<i class="fas fa-edit text-emerald-500 mr-2"></i> ဝယ်သူအချက်အလက် ပြင်ဆင်ခြင်း';
+document.getElementById('customer-id').value = c.id;
+document.getElementById('customer-name').value = c.name;
+document.getElementById('customer-phone').value = c.phone || '';
+document.getElementById('customer-type').value = c.customerType;
+
+// Backend က camelCase သို့မဟုတ် snake_case ဘယ်လိုပဲလာလာ အဆင်ပြေအောင် ညှိယူခြင်း
+document.getElementById('customer-debt').value = c.totalDebt !== undefined ? c.totalDebt : (c.total_debt || 0);
+}
+
+async function deleteCustomer(id) {
+if (!confirm('ဤဝယ်သူကို ဖျက်ပစ်ရန် သေချာပါသလား?')) return;
+try {
+await fetch(`${API_CUSTOMERS}/${id}`, { method: 'DELETE' });
+loadCustomers();
+} catch (err) { console.error(err); }
+}
+
+function resetCustomerForm() {
+document.getElementById('customer-form-title').innerHTML = '<i class="fas fa-user-plus text-emerald-500 mr-2"></i> ဝယ်သူအသစ် စာရင်းသွင်းခြင်း';
+document.getElementById('customer-form').reset();
+document.getElementById('customer-id').value = '';
+}
+</script>
+</body>
+</html>

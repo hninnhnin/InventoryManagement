@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Counter - Premium Invoice UI</title>
+    <style>
+        /* 🎨 CUSTOM PREMIUM OFFLINE STYLES (NO BOOTSTRAP INTERNET REQUIRED) */
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
+        .align-items-center { align-items: center; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .m-0 { margin: 0; }
+        .fw-bold { font-weight: bold; }
+        .text-muted { color: #6c757d; font-size: 14px; }
+        .text-success { color: #198754; }
+        .text-danger { color: #dc3545; }
+        .text-primary { color: #0d6efd; }
+        .text-center { text-align: center; }
+        .text-end { text-align: right; }
+
+        /* Navigation Links / Buttons */
+        .nav-buttons a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-left: 8px;
+            font-size: 14px;
+            display: inline-block;
+            border: 2px solid #198754;
+            color: #198754;
+        }
+        .nav-buttons a.btn-primary-outline { border-color: #0d6efd; color: #0d6efd; }
+
+        /* Grid Layout */
+        .row { display: flex; flex-wrap: wrap; margin: 0 -15px; }
+        .col-md-8 { flex: 0 0 66.666667%; max-width: 66.666667%; padding: 0 15px; box-sizing: border-box; }
+        .col-md-4 { flex: 0 0 33.333333%; max-width: 33.333333%; padding: 0 15px; box-sizing: border-box; }
+        .row.g-3 { margin: 0 -8px; }
+        .col-md-8.p-sub { flex: 0 0 66.666667%; padding: 0 8px; box-sizing: border-box; }
+        .col-md-4.p-sub { flex: 0 0 33.333333%; padding: 0 8px; box-sizing: border-box; }
+
+        /* UI Cards */
+        .pos-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            background: #ffffff;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        .checkout-box {
+            background: #ffffff;
+            border-top: 6px solid #198754;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            box-sizing: border-box;
+        }
+
+        /* Form Elements */
+        .form-select, .form-control {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+        .input-group { display: flex; width: 100%; }
+        .input-group .form-control { border-top-right-radius: 0; border-bottom-right-radius: 0; text-align: center; width: 40%; }
+        .input-group .btn { border-top-left-radius: 0; border-bottom-left-radius: 0; width: 60%; }
+
+        /* Buttons */
+        .btn { padding: 12px 20px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; text-align: center; }
+        .btn-primary { background-color: #0d6efd; color: white; }
+        .btn-success { background-color: #198754; color: white; width: 100%; display: block; font-size: 18px; border-radius: 10px; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; border-radius: 4px; }
+        .btn-outline-danger { background: transparent; border: 1px solid #dc3545; color: #dc3545; }
+
+        /* Table Style */
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background-color: #f8f9fa; padding: 12px; text-align: left; font-size: 14px; color: #495057; border-bottom: 2px solid #dee2e6; }
+        td { padding: 14px 12px; border-bottom: 1px solid #dee2e6; font-size: 15px; }
+
+        /* Alerts */
+        .alert { padding: 15px; margin-top: 15px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
+        .alert-warning { background-color: #fff3cd; border: 1px solid #ffe69c; color: #664d03; }
+        .d-none { display: none !important; }
+
+        /* 📄 REALISTIC THERMAL RECEIPT STYLE */
+        .receipt-paper {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+            font-family: 'Courier New', Courier, monospace;
+            color: #222;
+            line-height: 1.5;
+        }
+        .receipt-dash { border-top: 1px dashed #444; margin: 12px 0; }
+        .receipt-double-dash { border-top: 3px double #444; margin: 12px 0; }
+        .bg-light { background-color: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee; }
+
+        /* 🔲 OFFLINE MODAL OVERLAY FIX */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; overflow-y: auto; }
+        .modal.show { display: block; }
+        .modal-dialog { max-width: 450px; margin: 50px auto; padding: 10px; }
+        .modal-content { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
+        .modal-header { background: #212529; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { margin: 0; font-size: 18px; }
+        .btn-close-white { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; }
+        .modal-body { padding: 20px; background-color: #f1f3f5; }
+        .modal-footer { padding: 15px; background: #f8f9fa; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #dee2e6; }
+
+        /* Receipt Grid */
+        .rcpt-row { display: flex; font-size: 13px; margin-bottom: 4px; }
+        .rcpt-col-5 { width: 45%; color: #666; }
+        .rcpt-col-7 { width: 55%; text-align: right; }
+        .rcpt-col-6 { width: 50%; }
+        .rcpt-col-2 { width: 16.6%; text-align: center; }
+        .rcpt-col-4 { width: 33.3%; text-align: right; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark m-0">🎯 စမတ် အရောင်းကောင်တာ</h3>
+            <small class="text-muted">Invoice Flow အသေးစိတ်နှင့် အကြွေးစာရင်း တွက်ချက်မှုစနစ်</small>
+        </div>
+        <div class="nav-buttons">
+            <a href="installment_management.html">💳 Installment</a>
+            <a href="sale_management.html">💳 Sale</a>
+            <a href="payment_management.html">💳 Payment Management</a>
+            <a href="management.html" class="btn-primary-outline">⚙️ Data Management</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="pos-card">
+                <h6 class="fw-bold text-muted mb-3" style="text-uppercase; font-size:12px;">👥 ဝယ်သူရွေးချယ်ခြင်း (Customer)</h6>
+                <select id="customerDropdown" class="form-select">
+                    <option value="">None (ရိုးရိုးဝယ်သူ / လက်ငင်းငွေချေ)</option>
+                </select>
+            </div>
+
+            <div class="pos-card">
+                <h6 class="fw-bold text-muted mb-3" style="text-uppercase; font-size:12px;">📦 ကုန်ပစ္စည်းထည့်သွင်းခြင်း (Product)</h6>
+                <div class="row g-3">
+                    <div class="col-md-8 p-sub">
+                        <select id="productDropdown" class="form-select">
+                            <option value="">-- ကုန်ပစ္စည်းရွေးချယ်ရန် --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 p-sub">
+                        <div class="input-group">
+                            <input type="number" id="productQty" class="form-control" value="1" min="1">
+                            <button class="btn btn-primary" onclick="addItemToCart()">+ ထည့်မည်</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pos-card">
+                <h5 class="fw-bold text-dark mb-3">📋 ဝယ်ယူမည့် ပစ္စည်းစာရင်း</h5>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>ကုန်ပစ္စည်းအမည်</th>
+                            <th class="text-end">နှုန်းစျေး</th>
+                            <th class="text-center">အရေအတွက်</th>
+                            <th class="text-end">စုစုပေါင်း</th>
+                            <th class="text-center">ဖျက်</th>
+                        </tr>
+                        </thead>
+                        <tbody id="cartTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted" style="padding:40px 0;">ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ။</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="checkout-box">
+                <h4 class="fw-bold text-center text-dark mb-4">💳 ကျသင့်ငွေစာရင်း</h4>
+
+                <div class="d-flex justify-content-between mb-3" style="align-items: baseline;">
+                    <span class="text-muted" style="font-size:18px;">စုစုပေါင်း金额:</span>
+                    <span class="fw-bold text-success" id="totalDisplay" style="font-size:28px;">0 MMK</span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="fw-bold mb-3" style="display:block; font-size:14px;">💵 Ngwe Pay Chay Mhu Pon San</label>
+                    <select id="paymentType" class="form-select" onchange="onPaymentTypeChange()">
+                        <option value="CASH">CASH (လက်ငင်းငွေချေ)</option>
+                        <option value="INVOICE_CREDIT">INVOICE_CREDIT (ဆိုင်တွင်းအကြွေးစနစ်)</option>
+                        <option value="INSTALLMENT">INSTALLMENT (ရိုးရိုးအရစ်ကျ)</option>
+                    </select>
+                </div>
+
+                <div id="dynamicPaymentInfo" class="alert alert-warning d-none">
+                </div>
+
+                <div class="mb-4 d-none" id="installmentGroup">
+                    <label class="fw-bold text-primary mb-3" style="display:block; font-size:14px;">📅 အရစ်ကျဆပ်မည့် ကာလ</label>
+                    <select id="installmentMonths" class="form-select">
+                        <option value="3">3 လပိုင်းခြား</option>
+                        <option value="6">6 လပိုင်းခြား</option>
+                        <option value="12">12 လပိုင်းခြား</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-success fw-bold" onclick="processCheckout()" style="padding:15px 0;">
+                    🚀 ဘောက်ချာဖြတ်မည် (Checkout)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔲 OFFLINE WORKING MODAL RECEIPT -->
+<div class="modal" id="receiptModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">📄 Invoice Official Receipt</h5>
+                <button type="button" class="btn-close-white" onclick="clearCartAfterSale()">×</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="receipt-paper" id="printReceiptArea">
+                    <div class="text-center" class="mb-3">
+                        <h4 class="fw-bold m-0" style="letter-spacing: 1px;">MINI ENTERPRISE POS</h4>
+                        <small>ရန်ကုန်မြို့၊ မြန်မာနိုင်ငံ။</small><br>
+                        <small>Tel: 09-123456789</small>
+                        <div class="receipt-dash" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div style="text-transform: uppercase;">
+                        <div class="rcpt-row">
+                            <div class="rcpt-col-5">INV NUMBER:</div>
+                            <div class="rcpt-col-7 fw-bold" id="rcptInvoiceNo">INV-0000</div>
+                        </div>
+                        <div class="rcpt-row">
+                            <div class="rcpt-col-5">DATE TIME:</div>
+                            <div class="rcpt-col-7" id="rcptDate">01/01/2026</div>
+                        </div>
+                        <div class="rcpt-row">
+                            <div class="rcpt-col-5">CUSTOMER:</div>
+                            <div class="rcpt-col-7 fw-bold text-primary" id="rcptCustomerName">GUEST</div>
+                        </div>
+                        <div class="rcpt-row">
+                            <div class="rcpt-col-5">PAY METHOD:</div>
+                            <div class="rcpt-col-7 fw-bold" id="rcptPayType">CASH</div>
+                        </div>
+                    </div>
+
+                    <div class="receipt-dash"></div>
+
+                    <div class="rcpt-row fw-bold" style="margin-bottom:8px;">
+                        <div class="rcpt-col-6">PARTICULAR</div>
+                        <div class="rcpt-col-2">QTY</div>
+                        <div class="rcpt-col-4">AMOUNT</div>
+                    </div>
+
+                    <div id="rcptItemsContainer">
+                    </div>
+
+                    <div class="receipt-double-dash"></div>
+
+                    <div>
+                        <div class="rcpt-row" style="font-size:14px; margin-bottom:6px;">
+                            <div class="rcpt-col-6 fw-bold">GRAND TOTAL:</div>
+                            <div class="rcpt-col-4 fw-bold" id="rcptGrandTotal" style="font-size:16px;">0 MMK</div>
+                        </div>
+                        <div class="rcpt-row text-success" style="font-size:14px; margin-bottom:6px;">
+                            <div class="rcpt-col-6 fw-bold">✔ CASH PAID (ယနေ့ပေးချေငွေ):</div>
+                            <div class="rcpt-col-4 fw-bold" id="rcptPaidToday">0 MMK</div>
+                        </div>
+                        <div class="rcpt-row text-danger" style="font-size:14px; margin-bottom:6px;">
+                            <div class="rcpt-col-6 fw-bold">✚ NEW DEBT (အကြွေးအသစ်):</div>
+                            <div class="rcpt-col-4 fw-bold" id="rcptNewDebt">0 MMK</div>
+                        </div>
+                    </div>
+
+                    <div class="receipt-dash" id="debtSectionDash"></div>
+
+                    <div class="bg-light" id="debtSummaryBlock" style="font-size: 12px;">
+                        <div class="fw-bold text-muted text-center" style="margin-bottom:5px;">📊 CUSTOMER DEBT STATEMENT</div>
+                        <div class="d-flex justify-content-between">
+                            <span>အကြွေးဟောင်း (Bal):</span>
+                            <span id="rcptOldDebt">0 MMK</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-danger fw-bold" style="margin-top:4px;">
+                            <span>စုစုပေါင်း အကြွေးအသစ် (Total Debt):</span>
+                            <span id="rcptTotalDebt">0 MMK</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center" style="font-size: 12px; letter-spacing: 1px; margin-top:25px;">
+                        *** THANK YOU / SEE YOU AGAIN ***
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="clearCartAfterSale()">ပိတ်မည် (Close)</button>
+                <button type="button" class="btn btn-primary" onclick="printReceipt()">🖨️ Print Receipt</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cart = [];
+    let allProducts = [];
+    let grandTotal = 0;
+    let customerList = [];
+
+    // 💡 Window.bootstrap Polyfill for Offline Modal Opening
+    window.bootstrap = {
+        Modal: function(element) {
+            return {
+                show: function() { element.classList.add('show'); },
+                hide: function() { element.classList.remove('show'); }
+            };
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchCustomers();
+        fetchProducts();
+    });
+
+    async function fetchCustomers() {
+        try {
+            const res = await fetch('/api/customers');
+            customerList = await res.json();
+            const dropdown = document.getElementById("customerDropdown");
+            dropdown.innerHTML = '<option value="">None (ရိုးရိုးဝယ်သူ / လက်ငင်းငွေချေ)</option>';
+            customerList.forEach(c => {
+                let currentDebt = c.totalDebt ? c.totalDebt.toLocaleString() : 0;
+                dropdown.innerHTML += `<option value="${c.id}">${c.name} (အကြွေးကျန်: ${currentDebt} MMK)</option>`;
+            });
+        } catch (e) { console.error("ဝယ်သူဒေတာရခက်ခဲနေပါသည်-", e); }
+    }
+
+    async function fetchProducts() {
+        try {
+            const res = await fetch('/api/products');
+            allProducts = await res.json();
+            const dropdown = document.getElementById("productDropdown");
+            dropdown.innerHTML = '<option value="">-- ကုန်ပစ္စည်းရွေးချယ်ရန် --</option>';
+            allProducts.forEach(p => {
+                let price = p.sellingPrice ? p.sellingPrice.toLocaleString() : 0;
+                dropdown.innerHTML += `<option value="${p.id}">${p.name} - ${price} MMK</option>`;
+            });
+        } catch (e) { console.error("ကုန်ပစ္စည်းဒေတာရခက်ခဲနေပါသည်-", e); }
+    }
+
+    function addItemToCart() {
+        const prodId = document.getElementById("productDropdown").value;
+        const qty = parseInt(document.getElementById("productQty").value);
+        if (!prodId || qty <= 0) { alert("ကုန်ပစ္စည်းနှင့် အရေအတွက် မှန်ကန်စွာရွေးပါ"); return; }
+
+        const selectedProduct = allProducts.find(p => p.id === parseInt(prodId));
+        const existingItem = cart.find(item => item.product.id === selectedProduct.id);
+
+        if (existingItem) { existingItem.quantity += qty; }
+        else { cart.push({ product: selectedProduct, quantity: qty }); }
+        updateCartTable();
+    }
+
+    function updateCartTable() {
+        const tbody = document.getElementById("cartTableBody");
+        const totalDisplay = document.getElementById("totalDisplay");
+
+        if (cart.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:40px 0;">ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ။</td></tr>`;
+            totalDisplay.innerText = "0 MMK";
+            grandTotal = 0;
+            return;
+        }
+
+        let rows = ""; grandTotal = 0;
+        cart.forEach((item, index) => {
+            let itemTotal = item.product.sellingPrice * item.quantity;
+            grandTotal += itemTotal;
+            rows += `<tr>
+                <td><strong>${item.product.name}</strong></td>
+                <td class="text-end">${item.product.sellingPrice.toLocaleString()} MMK</td>
+                <td class="text-center fw-bold">${item.quantity}</td>
+                <td class="text-end fw-bold">${itemTotal.toLocaleString()} MMK</td>
+                <td class="text-center"><button class="btn btn-sm btn-outline-danger" onclick="removeItem(${index})">ဖျက်</button></td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = rows;
+        totalDisplay.innerText = grandTotal.toLocaleString() + " MMK";
+        onPaymentTypeChange();
+    }
+
+    function removeItem(index) { cart.splice(index, 1); updateCartTable(); }
+
+    function onPaymentTypeChange() {
+        const type = document.getElementById("paymentType").value;
+        const infoBox = document.getElementById("dynamicPaymentInfo");
+        const instGroup = document.getElementById("installmentGroup");
+
+        infoBox.classList.remove("d-none");
+        if (type === "CASH") {
+            infoBox.classList.add("d-none"); instGroup.classList.add("d-none");
+        } else if (type === "INVOICE_CREDIT") {
+            infoBox.className = "alert alert-warning";
+            infoBox.innerHTML = `⚠️ <strong>INVOICE CREDIT (ဆိုင်တွင်းအကြွေးစနစ်):</strong><br>ယနေ့ အရောင်းဖွင့်ချိန်တွင် ချက်ချင်းငွေချေရန် မလိုပါ။ ကျသင့်ငွေ ၁၀၀% အပြည့်အား ဝယ်သူ၏ အကြွေးစာရင်းထဲသို့ တိုက်ရိုက်ထည့်သွင်းသွားပါမည်။ (လတ်တလောဆုံးဘောက်ချာ ၅၀% ကျေမှ ထပ်ဝယ်ခွင့်ပြုမည်)`;
+            instGroup.classList.add("d-none");
+        } else if (type === "INSTALLMENT") {
+            infoBox.className = "alert alert-warning";
+            infoBox.innerHTML = `📅 <strong>INSTALLMENT (ပုံမှန်အရစ်ကျ):</strong><br>ယနေ့ ချက်ချင်းပေးချေရန် မလိုပါ။ စုစုပေါင်း金额အား ရွေးချယ်သည့်လအလိုက် အညီအမျှ အရစ်ကျ ခွဲဆပ်ရပါမည်။`;
+            instGroup.classList.remove("d-none");
+        }
+    }
+
+    async function processCheckout() {
+        if (cart.length === 0) { alert("ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိပါ!"); return; }
+        const customerId = document.getElementById("customerDropdown").value;
+        const paymentType = document.getElementById("paymentType").value;
+        const installmentMonths = document.getElementById("installmentMonths").value;
+
+        if (paymentType !== "CASH" && !customerId) {
+            alert("⚠️ အကြွေး သို့မဟုတ် အရစ်ကျစနစ်အတွက် 'None' သုံး၍မရပါ။ ကျေးဇူးပြု၍ ဝယ်သူအမည် ရွေးပေးပါဗျာ။");
+            return;
+        }
+
+        let paidAmount = 0; // INVOICE_CREDIT ရော INSTALLMENT ရော အရောင်းဖွင့်ချိန် 0 ချေမည်
+        if (paymentType === "CASH") { paidAmount = grandTotal; }
+
+        let url = `/api/sales/checkout?paymentType=${paymentType}&totalAmount=${grandTotal}&paidAmount=${paidAmount}`;
+        if (customerId) url += `&customerId=${customerId}`;
+        if (paymentType === "INSTALLMENT") url += `&installmentMonths=${installmentMonths}`;
+
+        const payload = cart.map(item => ({ product: { id: item.product.id }, quantity: item.quantity }));
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                showDetailReceipt(data, paymentType, customerId);
+            } else {
+                const errorText = await response.text();
+                if (errorText) { alert("❌ " + errorText); }
+                else { alert("❌ စတော့ခ်မလောက်ခြင်း သို့မဟုတ် စည်းမျဉ်းအမှား ဖြစ်နိုင်ပါသည်။"); }
+            }
+        } catch (error) { alert("🚨 Error: " + error.message); }
+    }
+
+    function showDetailReceipt(backendData, paymentType, customerId) {
+        document.getElementById("rcptInvoiceNo").innerText = backendData.invoiceNumber;
+        document.getElementById("rcptDate").innerText = new Date().toLocaleString();
+
+        const customerSelect = document.getElementById("customerDropdown");
+        const selectedText = customerSelect.options[customerSelect.selectedIndex].text;
+        document.getElementById("rcptCustomerName").innerText = customerId ? selectedText.split(" (")[0] : "GUEST CLIENT";
+        document.getElementById("rcptPayType").innerText = paymentType;
+
+        let itemsHtml = "";
+        cart.forEach(item => {
+            let total = item.product.sellingPrice * item.quantity;
+            itemsHtml += `
+                <div class="rcpt-row">
+                    <div class="rcpt-col-6">${item.product.name}</div>
+                    <div class="rcpt-col-2">${item.quantity}</div>
+                    <div class="rcpt-col-4">${total.toLocaleString()}</div>
+                </div>`;
+        });
+        document.getElementById("rcptItemsContainer").innerHTML = itemsHtml;
+
+        let totalBill = backendData.totalAmount;
+        document.getElementById("rcptGrandTotal").innerText = totalBill.toLocaleString() + " MMK";
+
+        let paidToday = 0;
+        let newDebt = 0;
+        let oldDebt = 0;
+
+        document.getElementById("debtSummaryBlock").classList.add("d-none");
+        document.getElementById("debtSectionDash").classList.add("d-none");
+
+        if (customerId) {
+            const foundCustomer = customerList.find(c => c.id === parseInt(customerId));
+            if (foundCustomer) { oldDebt = foundCustomer.totalDebt ? foundCustomer.totalDebt : 0; }
+        }
+
+        if (paymentType === "CASH") {
+            paidToday = totalBill;
+            newDebt = 0;
+        } else if (paymentType === "INVOICE_CREDIT" || paymentType === "INSTALLMENT") {
+            paidToday = 0;
+            newDebt = totalBill; // ၁၀၀% အပြည့် အကြွေးအသစ်ဖြစ်မည်
+            document.getElementById("debtSummaryBlock").classList.remove("d-none");
+            document.getElementById("debtSectionDash").classList.remove("d-none");
+        }
+
+        document.getElementById("rcptPaidToday").innerText = paidToday.toLocaleString() + " MMK";
+        document.getElementById("rcptNewDebt").innerText = newDebt.toLocaleString() + " MMK";
+        document.getElementById("rcptOldDebt").innerText = oldDebt.toLocaleString() + " MMK";
+        document.getElementById("rcptTotalDebt").innerText = (oldDebt + newDebt).toLocaleString() + " MMK";
+
+        const myModal = window.bootstrap.Modal(document.getElementById('receiptModal'));
+        myModal.show();
+    }
+
+    function printReceipt() {
+        const printContent = document.getElementById("printReceiptArea").innerHTML;
+        const originalContent = document.body.innerHTML;
+        document.body.innerHTML = printContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        window.location.reload();
+    }
+
+    function clearCartAfterSale() {
+        cart = [];
+        updateCartTable();
+        fetchCustomers();
+        document.getElementById("customerDropdown").value = "";
+        document.getElementById("paymentType").value = "CASH";
+        document.getElementById("receiptModal").classList.remove("show");
+        onPaymentTypeChange();
+    }
+</script>
+</body>
+</html>

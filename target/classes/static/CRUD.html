@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Counter Checkout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: sans-serif; }
+        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .checkout-panel { background-color: #fff; border-right: 4px solid #0d6efd; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🛒 ကောင်တာ ငွေရှင်းစနစ် (POS Counter)</h2>
+        <a href="crud.html" class="btn btn-outline-primary">⚙️ ဒေတာစီမံခန့်ခွဲမှုသို့ သွားမည်</a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="card p-3 mb-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">👥 ဝယ်သူ ID (Customer ID)</label>
+                        <input type="number" id="customerId" class="form-control" placeholder="ဥပမာ - 1 (အကြွေးဆိုလျှင် မဖြစ်မနေထည့်ပါ)">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">📦 ကုန်ပစ္စည်း ID</label>
+                        <input type="number" id="productId" class="form-control" placeholder="ဥပမာ - 1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">အရေအတွက်</label>
+                        <input type="number" id="productQty" class="form-control" value="1" min="1">
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" onclick="addItemToCart()">🛒 စာရင်းထဲသို့ ပေါင်းထည့်မည်</button>
+            </div>
+
+            <div class="card p-3">
+                <h5 class="mb-3">📋 လက်ရှိဝယ်ယူမည့် ပစ္စည်းစာရင်း</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>ပစ္စည်း ID</th>
+                            <th>အရေအတွက်</th>
+                            <th>လုပ်ဆောင်ချက်</th>
+                        </tr>
+                        </thead>
+                        <tbody id="cartTableBody">
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ။</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-3 checkout-panel">
+                <h4 class="text-center text-primary mb-4">💳 Bill Payment</h4>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">ငွေပေးချေမှုပုံစံ</label>
+                    <select id="paymentType" class="form-select" onchange="toggleInstallmentPanel()">
+                        <option value="CASH">CASH (လက်ငင်းငွေချေ)</option>
+                        <option value="CREDIT">CREDIT (အကြွေး / အရစ်ကျ ၅၀%)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 d-none" id="installmentGroup">
+                    <label class="form-label fw-bold text-danger">⚠️ အရစ်ကျဆပ်မည့် လအရေအတွက်</label>
+                    <input type="number" id="installmentMonths" class="form-control" value="3" min="1" placeholder="ဥပမာ - 3 လ">
+                    <small class="text-muted text-success">* စနစ်မှ ကျသင့်ငွေ၏ ၅၀% ကို အလိုအလျောက် ဖြတ်တောက်ပေးပါမည်။</small>
+                </div>
+
+                <hr>
+
+                <button class="btn btn-success btn-lg w-100 py-3 fw-bold" onclick="processCheckout()">🚀 ဘောက်ချာ ဖြတ်မည် (Checkout)</button>
+
+                <div class="mt-4">
+                    <h6 class="fw-bold">📄 Response Log:</h6>
+                    <div id="responseLog" class="p-2 bg-light border rounded text-muted" style="font-family: monospace; font-size: 13px; max-height: 200px; overflow-y: auto;">
+                        မည့်သည့် ဘောက်ချာမှ မဖြတ်ရသေးပါ။
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cart = []; // ဝယ်ယူမည့် ပစ္စည်းများကို ယာယီသိမ်းထားမည့် Array list
+
+    // ၁။ ခြင်းတောင်းထဲသို့ ပစ္စည်းယာယီပေါင်းထည့်ခြင်း
+    function addItemToCart() {
+        const prodId = document.getElementById("productId").value;
+        const qty = document.getElementById("productQty").value;
+
+        if (!prodId || qty <= 0) {
+            alert("ပစ္စည်း ID နှင့် အရေအတွက်ကို မှန်ကန်စွာ ထည့်ပါ");
+            return;
+        }
+
+        // ကောင်တာသမား ပစ္စည်းတူထပ်ထည့်ရင် အရေအတွက်ပဲ ပေါင်းပေးမည့် Logic
+        const existingItem = cart.find(item => item.product.id === parseInt(prodId));
+        if (existingItem) {
+            existingItem.quantity += parseInt(qty);
+        } else {
+            cart.push({
+                product: { id: parseInt(prodId) },
+                quantity: parseInt(qty)
+            });
+        }
+
+        updateCartTable();
+        // Form အကွက်များကို Reset ပြန်လုပ်ခြင်း
+        document.getElementById("productId").value = "";
+        document.getElementById("productQty").value = "1";
+    }
+
+    // ၂။ ခြင်းတောင်းဇယားကို HTML ပေါ်တွင် Update ပြုလုပ်ခြင်း
+    function updateCartTable() {
+        const tbody = document.getElementById("cartTableBody");
+        if (cart.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ။</td></tr>`;
+            return;
+        }
+
+        let rows = "";
+        cart.forEach((item, index) => {
+            rows += `
+                <tr>
+                    <td><strong>ID: ${item.product.id}</strong></td>
+                    <td>${item.quantity} ခု</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="removeItem(${index})">ဖျက်</button></td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = rows;
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        updateCartTable();
+    }
+
+    // ၃။ CREDIT ရွေးချယ်မှုအပေါ် မူတည်၍ လအရေအတွက် Input ကို အဖွင့်/အပိတ် လုပ်ခြင်း
+    function toggleInstallmentPanel() {
+        const paymentType = document.getElementById("paymentType").value;
+        const group = document.getElementById("installmentGroup");
+        if (paymentType === "CREDIT") {
+            group.classList.remove("d-none");
+        } else {
+            group.classList.add("d-none");
+        }
+    }
+
+    // ၄။ Backend REST API ဆီသို့ Data များ လှမ်းပို့၍ အပြီးသတ် ဘောက်ချာဖြတ်ခြင်း
+    async function processCheckout() {
+        if (cart.length === 0) {
+            alert("ခြင်းတောင်းထဲတွင် ပစ္စည်းအနည်းဆုံး ၁ ခု ရှိရပါမည်။");
+            return;
+        }
+
+        const customerId = document.getElementById("customerId").value;
+        const paymentType = document.getElementById("paymentType").value;
+        const installmentMonths = document.getElementById("installmentMonths").value;
+        const responseLog = document.getElementById("responseLog");
+
+        responseLog.innerHTML = "Backend သို့ ဒေတာ ပို့ဆောင်နေပါသည်...";
+
+        // Query Parameters များ ပြင်ဆင်ခြင်း
+        let url = `/api/sales/checkout?paymentType=${paymentType}`;
+        if (customerId) url += `&customerId=${customerId}`;
+        if (paymentType === "CREDIT" && installmentMonths) url += `&installmentMonths=${installmentMonths}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cart) // List<SalesItem> Payload အဖြစ် ပြောင်းလဲပေးပို့ခြင်း
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                responseLog.innerHTML = `<span class="text-success fw-bold">✅ ဘောက်ချာ အောင်မြင်သည်!</span><br>Invoice No: ${data.invoiceNumber}<br>Total: ${data.totalAmount} MMK`;
+                cart = []; // ခြင်းတောင်း ရှင်းလင်းခြင်း
+                updateCartTable();
+                document.getElementById("customerId").value = "";
+            } else {
+                responseLog.innerHTML = `<span class="text-danger fw-bold">❌ ဘောက်ချာ ဖြတ်၍မရပါ!</span><br>စတော့ခ်မလောက်ခြင်း သို့မဟုတ် ဝယ်သူ ID မှားယွင်းနေနိုင်ပါသည်။`;
+            }
+        } catch (error) {
+            responseLog.innerHTML = `<span class="text-danger fw-bold">🚨 Error တွက်ချက်မှု တက်နေပါသည်:</span><br>${error.message}`;
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <title>Installment Management စနစ်</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .clickable-row { cursor: pointer; transition: background 0.2s; }
+        .clickable-row:hover { background-color: #e9ecef !important; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <h3 class="fw-bold text-dark mb-4">🗓️ လစဉ်အရစ်ကျစနစ် စီမံခန့်ခွဲမှု (Installment)</h3>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card p-4 bg-white">
+                <h5 class="fw-bold mb-3 text-secondary">📋 အရစ်ကျ အရောင်းစာရင်းများ</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>ဝယ်သူ</th>
+                            <th>Invoice No</th>
+                            <th>ကာလ</th>
+                            <th>ရက်စွဲ</th>
+                        </tr>
+                        </thead>
+                        <tbody id="masterTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <a href="index.html" class="btn btn-outline-dark fw-bold px-4 rounded-pill">🛒 အရောင်းကောင်တာသို့</a>
+        </div>
+
+        <div class="col-md-6">
+            <div id="detailSection" class="card p-4 bg-white d-none">
+                <div class="border-bottom pb-3 mb-3">
+                    <h5 class="fw-bold text-primary">🔍 Installment Detail</h5>
+                    <div class="row mt-2 text-muted">
+                        <div class="col-6">ဝယ်သူ: <strong id="detCustomer" class="text-dark"></strong></div>
+                        <div class="col-6">ဘောက်ချာ: <strong id="detInvoice" class="text-dark"></strong></div>
+                        <div class="col-6 mt-1">အရစ်ကျကာလ: <strong id="detMonths" class="text-dark"></strong> လ</div>
+                        <div class="col-6 mt-1">လက်ကျန်ငွေ: <strong id="detBalance" class="text-danger"></strong> MMK</div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-2">📅 လအလိုက် ပေးချေမှု ခွဲတမ်းဇယား</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm border align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ရက်စွဲချိန်း</th>
+                            <th class="text-end">ပေးရမည့်ဘေလ်</th>
+                            <th class="text-center">အခြေအနေ</th>
+                            <th>လုပ်ဆောင်ချက်</th>
+                        </tr>
+                        </thead>
+                        <tbody id="detailTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="noSelectionMessage" class="card p-5 text-center text-muted bg-light border-dashed">
+                👈 ဘယ်ဘက်ဇယားမှ Row တစ်ခုကို နှိပ်၍ အသေးစိတ် အချက်အလက်နှင့် ငွေပေးချေမှုကို ကြည့်ရှုပါ။
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="payModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-3">
+            <h5 class="fw-bold text-success mb-3">💰 Installment ငွေသွင်းရန်</h5>
+            <form id="modalPayForm" onsubmit="submitInstallmentPayment(event)">
+                <input type="hidden" id="targetMasterId">
+                <input type="hidden" id="targetDetailId">
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">💵 ပေးသွင်းမည့် ပမာဏ</label>
+                    <input type="number" id="modalAmount" class="form-control form-control-lg text-primary fw-bold" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">🏪 ငွေပေးချေသည့် လမ်းကြောင်း</label>
+                    <select id="modalMethod" class="form-select">
+                        <option value="CASH">💵 CASH (လက်ငင်း)</option>
+                        <option value="KPAY">📱 KBZ Pay</option>
+                        <option value="WAVEPAY">🌊 Wave Money</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">အတည်ပြု သိမ်းဆည်းမည်</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentSelectedId = null;
+
+    document.addEventListener("DOMContentLoaded", fetchMasterList);
+
+    // ၁။ Master Row စာရင်းများကို ဆွဲတင်ခြင်း
+    // ၁။ Master Table List ဆွဲတင်သည့် ဖန်ရှင်
+    async function fetchMasterList() {
+        try {
+            const res = await fetch('/api/installments/list');
+            const data = await res.json();
+            let rows = "";
+            data.forEach(ins => {
+                // 💡 Backend က တိုက်ရိုက်ထည့်ပေးလိုက်တဲ့ Key တွေကို သုံးပြီး ဖတ်ရုံပါပဲ
+                let name = ins.customerName ? ins.customerName : "အမည်မသိ";
+                let invoice = ins.invoiceNumber ? ins.invoiceNumber : "N/A";
+                let date = ins.saleDate ? new Date(ins.saleDate).toLocaleDateString() : "-";
+
+                rows += `<tr class="clickable-row" onclick="showDetail(${ins.id})">
+                <td><strong>${name}</strong></td>
+                <td class="text-primary">${invoice}</td>
+                <td>${ins.totalMonths} လ</td>
+                <td><small class="text-muted">${date}</small></td>
+            </tr>`;
+            });
+            document.getElementById("masterTableBody").innerHTML = rows;
+        } catch (e) { console.error("Master list fetching error:", e); }
+    }
+
+    // ၂။ Row တစ်ခုကို နှိပ်လျှင် ဘေးချင်းကပ် Detail ပြသမည့် ဖန်ရှင်
+    // 💡 installment_management.html ထဲက showDetail(id) ဖန်ရှင်ကို ဒီအတိုင်း အစားထိုးပါ
+
+    async function showDetail(id) {
+        currentSelectedId = id;
+        document.getElementById("noSelectionMessage").classList.add("d-none");
+        document.getElementById("detailSection").classList.remove("d-none");
+
+        try {
+            const res = await fetch(`/api/installments/${id}`);
+            const ins = await res.json();
+
+            // 💡 Backend က ပို့ပေးလိုက်တဲ့ 'customerName' နဲ့ 'invoiceNumber' ကို တိုက်ရိုက်ယူသုံးခြင်း
+            document.getElementById("detCustomer").innerText = ins.customerName ? ins.customerName : "N/A";
+            document.getElementById("detInvoice").innerText = ins.invoiceNumber ? ins.invoiceNumber : "N/A";
+
+            document.getElementById("detMonths").innerText = ins.totalMonths;
+            document.getElementById("detBalance").innerText = Math.round(ins.remainingBalance).toLocaleString();
+
+            let rows = "";
+            let foundFirstUnpaid = false;
+
+            ins.details.forEach(d => {
+                let statusBadge = "";
+                let payBtn = "";
+
+                if (d.paid) {
+                    statusBadge = `<span class="badge bg-success">PAID</span>`;
+                    payBtn = `<button class="btn btn-sm btn-outline-secondary" disabled>ပြီးမြောက်</button>`;
+                } else {
+                    statusBadge = `<span class="badge bg-warning text-dark">UNPAID</span>`;
+
+                    if (!foundFirstUnpaid) {
+                        let remainingPayable = d.amountDue - d.collectedAmount;
+                        payBtn = `<button class="btn btn-sm btn-primary" onclick="openPayModal(${ins.id}, ${d.id}, ${Math.round(remainingPayable)})">ငွေသွင်း</button>`;
+                        foundFirstUnpaid = true;
+                    } else {
+                        payBtn = `<button class="btn btn-sm btn-secondary" disabled title="ယခင်လကြွေးကျန်ကို အရင်ပေးဆောင်ပါ">ပိတ်ထားပါသည်</button>`;
+                    }
+                }
+
+                rows += `<tr>
+                <td><small>${new Date(d.dueDate).toLocaleDateString()}</small></td>
+                <td class="text-end fw-bold">${Math.round(d.amountDue).toLocaleString()} MMK</td>
+                <td class="text-center">${statusBadge}</td>
+                <td>${payBtn}</td>
+            </tr>`;
+            });
+
+            document.getElementById("detailTableBody").innerHTML = rows;
+        } catch (e) { console.error("Detail fetching error:", e); }
+    }
+
+    // ၃။ ငွေသွင်းရန် Modal ဖွင့်ခြင်း
+    function openPayModal(masterId, detailId, suggestAmount) {
+        document.getElementById("targetMasterId").value = masterId;
+        document.getElementById("targetDetailId").value = detailId;
+        document.getElementById("modalAmount").value = suggestAmount;
+        new bootstrap.Modal(document.getElementById('payModal')).show();
+    }
+
+    // ၄။ Payment Submit ပြုလုပ်ခြင်း
+    async function submitInstallmentPayment(e) {
+        e.preventDefault();
+        const mid = document.getElementById("targetMasterId").value;
+        const did = document.getElementById("targetDetailId").value;
+        const amt = document.getElementById("modalAmount").value;
+        const method = document.getElementById("modalMethod").value;
+
+        const url = `/api/installments/${mid}/pay-installment?detailId=${did}&amount=${amt}&paymentMethod=${method}`;
+
+        try {
+            const res = await fetch(url, { method: 'POST' });
+            if (res.ok) {
+                alert("🎉 Installment ငွေချေမှု အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ!");
+                bootstrap.Modal.getInstance(document.getElementById('payModal')).hide();
+                await showDetail(mid); // detail ပြန် refresh လုပ်
+                await fetchMasterList(); // ကျန်ငွေတွေ ပြောင်းသွားမှာမို့ master ပြန် refresh လုပ်
+            } else { alert("❌ မအောင်မြင်ပါ: " + await res.text()); }
+        } catch (error) { alert("🚨 Network Error"); }
+    }
+</script>
+</body>
+</html>
