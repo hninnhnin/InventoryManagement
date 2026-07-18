@@ -351,11 +351,30 @@ document.getElementById('customer-debt').value = c.totalDebt !== undefined ? c.t
 }
 
 async function deleteCustomer(id) {
-if (!confirm('ဤဝယ်သူကို ဖျက်ပစ်ရန် သေချာပါသလား?')) return;
-try {
-await fetch(`${API_CUSTOMERS}/${id}`, { method: 'DELETE' });
-loadCustomers();
-} catch (err) { console.error(err); }
+    if (!confirm('ဤဝယ်သူကို ဖျက်ပစ်ရန် သေချာပါသလား?')) return;
+
+    try {
+        const response = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+
+        if (response.ok) {
+            alert("ဝယ်သူစာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
+            loadCustomers();
+        } else {
+            // Response က 400 ပြန်လာရင် စာသားကို အရင်ဆုံး Text အနေနဲ့ ဖတ်မယ်
+            const errorText = await response.text();
+
+            // တကယ်လို့ ပေါက်ကရ HTML format ကြီး ထွက်လာရင် ဖယ်ထုတ်ပစ်ဖို့ စစ်မယ်
+            if (errorText.includes("<!DOCTYPE") || errorText.includes("<html")) {
+                alert("⚠️ စနစ်အတွင်း အမှားအယွင်းတစ်ခု ဖြစ်ပေါ်ခဲ့ပါသည်။");
+            } else {
+                // Backend က ပို့လိုက်တဲ့ မြန်မာလို စာသားသက်သက်ဆိုရင် တန်းပြမယ်
+                alert(errorText);
+            }
+        }
+    } catch (err) {
+        console.error("Error details:", err);
+        alert("လိုင်းချက်ဆက်မှု ချို့ယွင်းနေပါသည်။");
+    }
 }
 
 function resetCustomerForm() {

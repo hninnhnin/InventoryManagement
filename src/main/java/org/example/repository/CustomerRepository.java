@@ -13,5 +13,6 @@ import java.util.Optional;
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     // ဖုန်းနံပါတ်ဖြင့် ဝယ်သူအား အမြန်ရှာဖွေရန် (Query အလိုအလျောက် ထွက်လာပါမည်)
     Optional<Customer> findByPhone(String phone);
+    List<Customer> findAllByIsActiveTrue();
 }
 

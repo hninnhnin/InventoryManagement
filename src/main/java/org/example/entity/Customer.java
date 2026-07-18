@@ -27,6 +27,15 @@ public class Customer {
 
     @Column(name = "total_debt")
     private BigDecimal totalDebt = BigDecimal.ZERO;
+    private boolean isActive = true;
+    @Column(name = "is_active", nullable = false)
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
 
     public Long getId() {
         return id;

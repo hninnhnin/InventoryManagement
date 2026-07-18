@@ -1,29 +1,20 @@
 package org.example.repository;
 
-import org.example.entity.Sale;
+import org.example.entity.SalesItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-
 @Repository
-public interface SaleRepository extends JpaRepository<Sale, Long> {
-    // Invoice Number အတိအကျဖြင့် အရောင်းဘောက်ချာ ပြန်လည်ရှာဖွေရန်
-    Optional<Sale> findByInvoiceNumber(String invoiceNumber);
-    Optional<Sale> findFirstByCustomerIdOrderByIdDesc(Long customerId);
-    @Query("SELECT DISTINCT s FROM Sale s LEFT JOIN FETCH s.customer WHERE s.paymentType != 'CASH'")
-    List<Sale> findAllNonCashSales();
+public interface SaleItemRepository extends JpaRepository<SalesItem, Long> {
     @Query(value = "SELECT p.name FROM sales_items si " +
             "JOIN sales s ON si.sale_id = s.id " +
             "JOIN products p ON si.product_id = p.id " +
             "WHERE EXTRACT(MONTH FROM s.sale_date) = :month " +
             "AND EXTRACT(YEAR FROM s.sale_date) = :year " +
-            "GROUP BY p.id, p.name " +
+            "GROUP BY p.name " +
             "ORDER BY SUM(si.quantity) DESC " +
             "LIMIT 1", nativeQuery = true)
     String findTopSellingItemByMonth(@Param("month") int month, @Param("year") int year);
-
 }

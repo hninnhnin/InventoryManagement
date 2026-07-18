@@ -53,10 +53,12 @@ public class SaleController {
     /**
      * 🎯 CASH မဟုတ်သော အကြွေးနှင့် အရစ်ကျစာရင်းများကို PAID / UNPAID ขွဲထုတ်ပေးသည့် API
      */
+    // 🎯 Controller ရဲ့ အပေါ်ဆုံးနားမှာ CreditSaleRepository ကို Inject လုပ်ထားဖို့ လိုပါမယ်
+// @Autowired private CreditSaleRepository creditSaleRepository;
+
     @GetMapping("/list")
     public ResponseEntity<?> getAllNonCashSales() {
         try {
-            // ၁။ CASH မဟုတ်တာတွေကို အမြန်နှုန်းမြှင့် Query ဖြင့် ဆွဲထုတ်ခြင်း
             List<Sale> allSales = saleRepository.findAllNonCashSales();
             List<Map<String, Object>> response = new ArrayList<>();
 
@@ -71,23 +73,24 @@ public class SaleController {
                     map.put("paymentMethod", pType);
                     map.put("totalAmount", sale.getTotalAmount());
 
-                    // ၂။ လက်ကျန်ငွေ တွက်ချက်ခြင်း (DB သို့ အကြိမ်ကြိမ် မခေါ်စေရန် သတိပြုခြင်း)
                     BigDecimal remainingBalance = BigDecimal.ZERO;
 
                     if (pType.equalsIgnoreCase("INSTALLMENT")) {
-                        // တိုက်ရိုက် Repo ကနေ သက်ဆိုင်ရာ ID အလိုက် အမြန်ရှာဖွေခြင်း
+                        // INSTALLMENT အတွက် DB ထဲက အမှန်အတိုင်း ရှာဖွေခြင်း
                         remainingBalance = installmentSaleRepository.findBySaleId(sale.getId())
                                 .map(InstallmentSale::getRemainingBalance)
                                 .orElse(BigDecimal.ZERO);
                     } else {
-                        // CREDIT အတွက် ၅၀% စည်းမျဉ်း
-                        if (sale.getTotalAmount() != null) {
-                            remainingBalance = sale.getTotalAmount().multiply(new BigDecimal("0.5"));
-                        }
+                        // 🎯 CREDIT အတွက် ၅၀% Hardcode ကို ဖျက်ပြီး DB ထဲက အစစ်အမှန် ကျန်ငွေကို ဆွဲထုတ်ခြင်း
+                        remainingBalance = creditSaleRepository.findBySale(sale)
+                                .map(CreditSale::getRemainingAmount) // သို့မဟုတ် မင်းရဲ့ Entity ထဲက field နာမည်
+                                .orElse(BigDecimal.ZERO);
                     }
 
                     map.put("remainingBalance", remainingBalance);
-                    String status = (remainingBalance.compareTo(BigDecimal.ZERO) == 0) ? "PAID" : "UNPAID";
+
+                    // 🎯 အစစ်အမှန် ကျန်ငွေ သုည ဖြစ်သွားရင် PAID ပြောင်းပေးပါပြီ
+                    String status = (remainingBalance.compareTo(BigDecimal.ZERO) <= 0) ? "PAID" : "UNPAID";
                     map.put("status", status);
 
                     String customerName = sale.getCustomer() != null ? sale.getCustomer().getName() : "အမည်မသိ";
